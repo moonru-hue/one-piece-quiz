@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通往偉大航道：角色特質測驗</title>
+    <style>
+        :root {
+            --sea-blue: #1a5276;
+            --gold: #f1c40f;
+            --parchment: #fdf5e6;
+            --wood: #5d4037;
+            --btn-yes: #27ae60;
+            --btn-no: #c0392b;
+        }
+
+        body {
+            background-color: var(--sea-blue);
+            background-image: radial-gradient(circle, #2980b9 0%, #1a5276 100%);
+            font-family: "Microsoft JhengHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        #quiz-container {
+            background: var(--parchment);
+            max-width: 650px;
+            width: 90%;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 8px solid var(--wood);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 { color: var(--wood); font-size: 2.2em; margin-top: 0; }
+        
+        .intro-text {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            color: #444;
+        }
+
+        .progress-text { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .question-text {
+            font-size: 1.4em;
+            color: var(--wood);
+            margin-bottom: 30px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .quiz-btn {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            transition: 0.2s;
+            min-width: 120px;
+        }
+        .btn-start { background: var(--wood); width: 100%; }
+        .btn-yes { background: var(--btn-yes); }
+        .btn-no { background: var(--btn-no); }
+        .quiz-btn:hover { opacity: 0.8; transform: translateY(-2px); }
+
+        /* 結果頁樣式 */
+        .role-img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 5px solid var(--gold);
+            margin: 20px 0;
+            background: #eee;
+        }
+        .role-description {
+            text-align: left;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--gold);
+            font-size: 0.95em;
+            color: #333;
+        }
+        .role-bar-container { margin-bottom: 15px; text-align: left; }
+        .role-label { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
+        .bar-bg { background: #ddd; height: 12px; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; background: var(--gold); transition: width 1s ease-in-out; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="start-screen">
+        <h1>⚓ 通往偉大航道 ⚓</h1>
+        <div class="intro-text">
+            想要抵達傳說中的終點，單打獨鬥是行不通的。每個人都是一顆獨特的星，在黑暗的海面上指引方向。但在出航之前，你是否真正了解自己的角色？<br><br>
+            你是那種在暴風雨中依然握緊船舵的領導者？<br>
+            還是能在細微處發現寶藏、精於分析的智囊？<br>
+            或者是能隨時調節氣氛，成為團隊黏著劑的守護者？<br><br>
+            這份測驗不是為了定義你的好壞，而是為了幫你找到最能發揮光芒的崗位。完成它，讓我們一起組建最強的船隊，航向未知的航道！
+        </div>
+        <button class="quiz-btn btn-start" onclick="startQuiz()">開始冒險</button>
+    </div>
+
+    <div id="quiz-box" class="hidden">
+        <div class="progress-text" id="progress">第 1 / 26 題</div>
+        <div class="question-text" id="question-content"></div>
+        <div style="display: flex; gap: 20px; justify-content: center;">
+            <button class="quiz-btn btn-yes" onclick="answer(true)">是</button>
+            <button class="quiz-btn btn-no" onclick="answer(false)">否</button>
+        </div>
+    </div>
+
+    <div id="result" class="hidden">
+        <h2 style="margin-bottom: 5px;">📊 你的航海特質鑑定書</h2>
+        <img id="main-role-pic" class="role-img" src="" alt="角色圖片">
+        <h3 id="main-role-title" style="color: var(--wood); font-size: 1.8em; margin: 5px 0;"></h3>
+        <div id="main-role-desc" class="role-description"></div>
+        <hr>
+        <h4 style="text-align: left; margin: 15px 0 10px 0;">潛力分佈 (依佔比排序)：</h4>
+        <div id="charts"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:var(--wood); color:white; border:none; cursor:pointer; border-radius: 5px;">重新測驗</button>
+    </div>
+</div>
+
+<script>
+    // 圖片連結設定處
+    const roleAssets = {
+        "衝鋒隊長": "https://drive.google.com/file/d/1LxQ64RxhPwb5pqyBTOT3xWCcE_l4He9J/view?usp=drive_link", 
+        "天基策士": "https://drive.google.com/file/d/1sz-Z8SIGp-SbK0WSYf0IQkOUbCsBRx-l/view?usp=drive_link",
+        "精巧匠師": "https://drive.google.com/file/d/1LY6yacTcbZ649O4jVEVQzRK3awR8IUz1/view?usp=drive_link",
+        "月語使者": "https://drive.google.com/file/d/1sLgCGGbCuk4FBcAk-ub0e_mONWz2T5me/view?usp=drive_link",
+        "花火術士": "https://drive.google.com/file/d/1sW42PpUmK1bFdaXA1NEd_dYL6dBDCU52/view?usp=drive_link"
+    };
+
+    // 角色特徵文字設定處
+    const roleInfo = {
+        "衝鋒隊長": "你是一個能把大家拉在一起的人。你為團隊訂下節奏與路線，帶領大家面向目標，能在不同意見中做出果斷抉擇。有人卡關時，你願意扛責任、也願意分功勞，讓團隊在你的步伐下穩穩前進。",
+        "天基策士": "你是一個善於分析事物、具有極佳的問題思考能力的人。你會把模糊題目拆成小問題，用清楚脈絡邏輯找出最佳路線；你敏感於風險，總能在出事前先看到問題所在，並準備好替代方案。",
+        "精巧匠師": "你是一個說做就做、勇於落實的人。你喜歡把想法做成看得見、摸得到的作品；你在細節上很挑剔，會建立標準做法，讓成品穩定而有質感。",
+        "月語使者": "你喜歡與人溝通、建立連結，反應快且有彈性。擅長活化團隊內部氣氛，也擅長建立與外部的信任關係，適合代表團隊對外發言，或與他人相處融洽，讓合作更順利。",
+        "花火術士": "你是一個靈感湧現、喜歡嘗試新事物的人。你樂於連結不同想法，總是有源源不絕的新點子，替團隊帶來新玩法與新視角；你懂得把創意包裝成故事或名稱，讓方案更有記憶點。"
+    };
+
+    let questions = [
+        { text: "我喜歡在一開始就把大家聚在一起討論，並把混亂的靈感訂定方向與節奏。", roles: ["衝鋒隊長"] },
+        { text: "面對模糊任務，我會先把問題拆解成幾個小步驟。", roles: ["天基策士"] },
+        { text: "我最有成就感的時刻，是把點子做成看得見的成品。", roles: ["精巧匠師"] },
+        { text: "我習慣翻譯別人的想法，讓大家聽得懂、做得到。", roles: ["月語使者", "天基策士"] },
+        { text: "我腦中經常同時冒出好幾個新點子，喜歡嘗試不同做法。", roles: ["花火術士"] },
+        { text: "大家意見很多時，我能快速收斂成 2-3 個選項讓團隊決定。", roles: ["衝鋒隊長", "天基策士"] },
+        { text: "我會設定階段性目標，若進度落後，我會調整做法並扛下收尾工作。", roles: ["衝鋒隊長", "精巧匠師"] },
+        { text: "我擅長寫訊息、打電話或面對面溝通，促成合作或與他人借資源。", roles: ["月語使者"] },
+        { text: "我擅長包裝遊戲的「儀式感」，讓玩家在進入謎題前就充滿期待。", roles: ["花火術士"] },
+        { text: "有衝突或冷場時，我會先同理對方、重述重點再帶回共識。", roles: ["衝鋒隊長", "月語使者"] },
+        { text: "我會建立一套「設計標準」，讓所有組員做出來的東西視覺一致。", roles: ["天基策士", "精巧匠師"] },
+        { text: "我喜歡把人與人、資源與資源串起來，介紹大家彼此認識。", roles: ["衝鋒隊長", "月語使者"] },
+        { text: "我會先做一個簡單雛形，邊做邊修，比一直討論更有效率。", roles: ["精巧匠師"] },
+        { text: "我能迅速提出多種不同的創意方案，並透過實際測試找出最吸引人的那一個。", roles: ["天基策士", "花火術士"] },
+        { text: "我習慣預想各種突發狀況，並事先準備好備案（Plan A/B），以免臨時出事。", roles: ["天基策士", "精巧匠師", "衝鋒隊長"] },
+        { text: "我喜歡教別人工具或技巧，把做法拆成步驟。", roles: ["精巧匠師", "月語使者"] },
+        { text: "我樂於分配任務，並持續追蹤進度，確保最後成品符合最初的品質。", roles: ["衝鋒隊長"] },
+        { text: "我對細節很敏感，會主動修正小錯誤、統一版面或格式。", roles: ["精巧匠師"] },
+        { text: "我喜歡在遊戲中加入一些幽默感或「彩蛋」，讓玩家會心一笑。", roles: ["花火術士"] },
+        { text: "新專案剛開始，我會主動建立任務清單與時間表。", roles: ["衝鋒隊長", "天基策士"] },
+        { text: "我很享受代表團隊在講台上，將我們的遊戲創意賣力地「推銷」出去。", roles: ["花火術士", "月語使者"] },
+        { text: "我喜歡觀察使用者/觀眾的反應，並提出優化建議。", roles: ["天基策士", "月語使者"] },
+        { text: "我喜歡挑戰新技術（如 AR、特殊機關），並將其實作在遊戲中。", roles: ["精巧匠師", "花火術士"] },
+        { text: "即使是一個枯燥的題目，我也能把它寫成一個吸引人的謎題故事。", roles: ["花火術士"] },
+        { text: "當專案進展太慢時，我會提出「先求有再求好」的簡化實作方案。", roles: ["衝鋒隊長", "精巧匠師"] },
+        { text: "當團隊陷入泥淖或快放棄時，我會是那個留在現場陪大家戰到最後、想辦法完工的人。", roles: ["衝鋒隊長"] }
+    ];
+
+    let currentStep = 0;
+    const scores = { "衝鋒隊長": 0, "天基策士": 0, "精巧匠師": 0, "月語使者": 0, "花火術士": 0 };
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function startQuiz() {
+        shuffleArray(questions);
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-box').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        if (currentStep < questions.length) {
+            document.getElementById('progress').innerText = `第 ${currentStep + 1} / ${questions.length} 題`;
+            document.getElementById('question-content').innerText = questions[currentStep].text;
+        } else {
+            showResult();
+        }
+    }
+
+    function answer(isYes) {
+        if (isYes) {
+            questions[currentStep].roles.forEach(role => scores[role]++);
+        }
+        currentStep++;
+        showQuestion();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-box').classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+
+        const totalPoints = Object.values(scores).reduce((a, b) => a + b, 0);
+        
+        // 排序：從高分到低分
+        const sortedScores = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+        const topRole = sortedScores[0][0];
+
+        // 顯示主要角色資訊
+        document.getElementById('main-role-pic').src = roleAssets[topRole];
+        document.getElementById('main-role-title').innerText = `主要角色：${topRole}`;
+        document.getElementById('main-role-desc').innerText = roleInfo[topRole];
+
+        // 渲染排序後的長條圖
+        const chartsDiv = document.getElementById('charts');
+        chartsDiv.innerHTML = "";
+        
+        sortedScores.forEach(([role, score]) => {
+            const percentage = totalPoints > 0 ? ((score / totalPoints) * 100).toFixed(1) : 0;
+            chartsDiv.innerHTML += `
+                <div class="role-bar-container">
+                    <div class="role-label"><span>${role}</span><span>${percentage}%</span></div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: ${percentage}%"></div></div>
+                </div>
+            `;
+        });
+    }
+</script>
+
+</body>
+</html>
